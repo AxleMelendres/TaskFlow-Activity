@@ -1,33 +1,81 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { supabase } from './lib/supabase';
 
 type Task = {
   id: string;
   title: string;
   completed: boolean;
+  created_at: string;
 };
 
 export default function App() {
   const [task, setTask] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  const addTask = () => {
+  const loadTasks = async () => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    setTasks(data ?? []);
+  };
+
+  useEffect(() => {
+    await loadTasks();
+  }, []);
+
+  const addTask = async () => {
     const title = task.trim();
 
     if (!title) {
       return;
     }
 
-    setTasks((currentTasks) => [
-      ...currentTasks,
-      {
-        id: Date.now().toString(),
-        title,
-        completed: false,
-      },
-    ]);
+    const { error } = await supabase.from('tasks').insert({
+      title,
+      completed: false,
+    });
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
     setTask('');
+    await loadTasks();
+  };
+
+  const toggleTask = async (item: Task) => {
+    const { error } = await supabase
+      .from('tasks')
+      .update({ completed: !item.completed })
+      .eq('id', item.id);
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    await loadTasks();
+  };
+
+  const deleteTask = async (id: string) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    loadTasks();
   };
 
   return (
@@ -49,10 +97,21 @@ export default function App() {
       </View>
 
       {tasks.map((item) => (
-        <View key={item.id} style={styles.taskRow}>
-          <MaterialIcons name="check-box-outline-blank" size={20} color="#5A6472" />
-          <Text style={styles.taskText}>{item.title}</Text>
-        </View>
+        <TouchableOpacity
+          key={item.id}
+          style={styles.taskRow}
+          activeOpacity={0.7}
+          onPress={() => toggleTask(item)}
+          onLongPress={() => deleteTask(item.id)}>
+          <MaterialIcons
+            name={item.completed ? 'check-box' : 'check-box-outline-blank'}
+            size={20}
+            color="#5A6472"
+          />
+          <Text style={[styles.taskText, item.completed && styles.completedTaskText]}>
+            {item.title}
+          </Text>
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -111,5 +170,9 @@ const styles = StyleSheet.create({
   },
   taskText: {
     fontSize: 15,
+  },
+  completedTaskText: {
+    color: '#7A8492',
+    textDecorationLine: 'line-through',
   },
 });
