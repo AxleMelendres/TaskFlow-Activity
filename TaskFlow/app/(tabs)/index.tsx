@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet } from 'react-native';
+import TaskForm from '@/components/TaskForm';
+import TaskItem from '@/components/TaskItem';
 import { supabase } from './lib/supabase';
 
 type Task = {
@@ -29,7 +30,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    await loadTasks();
+    void loadTasks();
   }, []);
 
   const addTask = async () => {
@@ -75,7 +76,7 @@ export default function App() {
       return;
     }
 
-    loadTasks();
+    await loadTasks();
   };
 
   return (
@@ -84,34 +85,15 @@ export default function App() {
         <Text style={headerStyles.title}>TaskFlow</Text>
       </View>
 
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Task"
-          value={task}
-          onChangeText={setTask}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={addTask}>
-          <MaterialIcons name="add" size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <TaskForm task={task} setTask={setTask} onAdd={addTask} />
 
       {tasks.map((item) => (
-        <TouchableOpacity
+        <TaskItem
           key={item.id}
-          style={styles.taskRow}
-          activeOpacity={0.7}
-          onPress={() => toggleTask(item)}
-          onLongPress={() => deleteTask(item.id)}>
-          <MaterialIcons
-            name={item.completed ? 'check-box' : 'check-box-outline-blank'}
-            size={20}
-            color="#5A6472"
-          />
-          <Text style={[styles.taskText, item.completed && styles.completedTaskText]}>
-            {item.title}
-          </Text>
-        </TouchableOpacity>
+          item={item}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
+        />
       ))}
     </View>
   );
@@ -140,39 +122,5 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginRight: 10,
-  },
-  addButton: {
-    backgroundColor: '#2E5BBA',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  taskRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  taskText: {
-    fontSize: 15,
-  },
-  completedTaskText: {
-    color: '#7A8492',
-    textDecorationLine: 'line-through',
   },
 });
