@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import TaskForm from '@/components/TaskForm';
+import { Alert, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import AddTaskModal from '@/components/AddTaskModal';
 import TaskItem from '@/components/TaskItem';
 import { supabase } from './lib/supabase';
 
@@ -12,8 +13,8 @@ type Task = {
 };
 
 export default function App() {
-  const [task, setTask] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
 
   const loadTasks = async () => {
     const { data, error } = await supabase
@@ -33,8 +34,8 @@ export default function App() {
     void loadTasks();
   }, []);
 
-  const addTask = async () => {
-    const title = task.trim();
+  const addTask = async (taskTitle: string) => {
+    const title = taskTitle.trim();
 
     if (!title) {
       return;
@@ -50,8 +51,9 @@ export default function App() {
       return;
     }
 
-    setTask('');
     await loadTasks();
+    setIsAddModalVisible(false);
+    Alert.alert('Task added', 'Your task was added successfully.');
   };
 
   const toggleTask = async (item: Task) => {
@@ -77,6 +79,7 @@ export default function App() {
     }
 
     await loadTasks();
+    Alert.alert('Task deleted', 'Your task was deleted successfully.');
   };
 
   return (
@@ -84,8 +87,6 @@ export default function App() {
       <View style={headerStyles.header}>
         <Text style={headerStyles.title}>TaskFlow</Text>
       </View>
-
-      <TaskForm task={task} setTask={setTask} onAdd={addTask} />
 
       {tasks.map((item) => (
         <TaskItem
@@ -95,6 +96,19 @@ export default function App() {
           onDelete={deleteTask}
         />
       ))}
+
+      <TouchableOpacity
+        style={styles.floatingAddButton}
+        activeOpacity={0.8}
+        onPress={() => setIsAddModalVisible(true)}>
+        <MaterialIcons name="add" size={30} color="#fff" />
+      </TouchableOpacity>
+
+      <AddTaskModal
+        visible={isAddModalVisible}
+        onClose={() => setIsAddModalVisible(false)}
+        onSubmit={addTask}
+      />
     </View>
   );
 }
@@ -122,5 +136,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
+  },
+  floatingAddButton: {
+    position: 'absolute',
+    right: 24,
+    bottom: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#2E5BBA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 6,
+    elevation: 6,
   },
 });
