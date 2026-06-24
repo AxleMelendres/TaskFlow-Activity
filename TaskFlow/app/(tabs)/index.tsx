@@ -1,8 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
+type Task = {
+  id: string;
+  title: string;
+  completed: boolean;
+};
+
 export default function App() {
+  const [task, setTask] = useState('');
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  const addTask = () => {
+    const title = task.trim();
+
+    if (!title) {
+      return;
+    }
+
+    setTasks((currentTasks) => [
+      ...currentTasks,
+      {
+        id: Date.now().toString(),
+        title,
+        completed: false,
+      },
+    ]);
+    setTask('');
+  };
+
   return (
     <View style={styles.container}>
       <View style={headerStyles.header}>
@@ -13,21 +40,20 @@ export default function App() {
         <TextInput
           style={styles.input}
           placeholder="Enter Task"
+          value={task}
+          onChangeText={setTask}
         />
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={addTask}>
           <MaterialIcons name="add" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.taskRow}>
-        <MaterialIcons name="check-box-outline-blank" size={20} color="#5A6472" />
-        <Text style={styles.taskText}>Study React Native</Text>
-      </View>
-
-      <View style={styles.taskRow}>
-        <MaterialIcons name="check-box-outline-blank" size={20} color="#5A6472" />
-        <Text style={styles.taskText}>Finish Assignment</Text>
-      </View>
+      {tasks.map((item) => (
+        <View key={item.id} style={styles.taskRow}>
+          <MaterialIcons name="check-box-outline-blank" size={20} color="#5A6472" />
+          <Text style={styles.taskText}>{item.title}</Text>
+        </View>
+      ))}
     </View>
   );
 }
